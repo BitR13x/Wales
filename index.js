@@ -20,6 +20,8 @@ client.on('message', msg => {
     const voiceChannel = msg.member.voice.channel;
     var playing = []
     // https://github.com/stuyy/discordjs-youtube-tutorials
+    // hyper.is
+    // https://discord.js.org/#/docs/main/stable/class/VoiceChannel
 
     if (command === prefix + "p") {
         if (!args[1]) {
@@ -118,10 +120,6 @@ client.on('message', msg => {
         } else {
             msg.reply("You need enter single number")
         };
-    }
-
-    else if (command === prefix + 'test') {
-        msg.reply('just testing mate'); 
     }
 
     else if (command === prefix + 'avatar') {
