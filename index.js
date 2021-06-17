@@ -1,58 +1,54 @@
 const Discord = require('discord.js');
-const ytdl = require('ytdl-core-discord');
-
+const ytdl = require('ytdl-core');
 const client = new Discord.Client();
 // const config = require('./config.json');
-
 const settings = {
     prefix: '?',
     token: 'ODMzNjM5NDIwMDQ1MDMzNDky.YH1RNg.gHK2gTKycfeMwBhteAKDqqseynA'
 };
-
 const prefix = settings.prefix
 
-//const dispatcher = broadcast.play('./audio.mp3');
-
 client.once('ready', () => {
-	console.log('Ready!');
+    console.log("Logged in as ", client.user.username + "#" + client.user.discriminator)
 });
-client.login(settings.token);
 
-//lisen for messages
+client.login(settings.token);
 client.on('message', msg => {
     if (!msg.content.startsWith(prefix) || msg.author.bot) return;
     const args = msg.content.split(" ");
     const command = args.shift().toLowerCase()
     const voiceChannel = msg.member.voice.channel;
     var playing = []
-    var music = "Believer"
-    // make better playing musics
-    // possible to dont have tracker 
-    // https://stackoverflow.com/questions/56718658/how-to-check-if-bot-is-connected-to-a-channel-discord-py
+    // https://github.com/stuyy/discordjs-youtube-tutorials
 
-
-    if (command === prefix + "p") {   
-        if (voiceChannel) {
+    if (command === prefix + "p") {
+        if (!args[1]) {
+            msg.reply("Please provide link")
+        }
+        else if (voiceChannel) {
             voiceChannel.join().then(connection => {
                 if (!vol) {
                     var vol = 75 / 100
                 }
-                
-                const dispatcher = connection.play(`./${music}.mp3`, { volume: vol });
-                msg.channel.send(`now playing: ${music}`);
+                console.log(args)
+                var music = args[1]
+                //const dispatcher = connection.play(`./${music}.mp3`, { volume: vol });
 
-                //const stream = ytdl('https://www.youtube.com/watch?v=gOMhN-hfMtY', { filter : 'audioonly' });
-                //const dispatcher = connection.playStream(stream, streamOptions);
+                const stream = ytdl(`${music}`, { volume: vol, filter : 'audioonly' });
+                const dispatcher = connection.play(stream);
+                playing.push(music)
 
-                dispatcher.on("start", () => {
+                dispatcher.on("start", () => { 
                     console.log("audio playing")
-                    playing.push(music)
+                    msg.channel.send(`now playing: ${playing[0]}`);
                 });
 
                 dispatcher.on("finish", () => {
                     console.log("left channel");
-                    playing.pop()
-                    //voiceChannel.leave();
+                    playing.shift()
+                    if (playing.length === "0"){
+                        voiceChannel.leave();
+                    }
                 });
             });
         } else {
