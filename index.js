@@ -20,7 +20,6 @@ client.on('message', msg => {
     const voiceChannel = msg.member.voice.channel;
     var playing = []
     // https://github.com/stuyy/discordjs-youtube-tutorials
-    // hyper.is
     // https://discord.js.org/#/docs/main/stable/class/VoiceChannel
 
     if (command === prefix + "p") {
@@ -32,13 +31,9 @@ client.on('message', msg => {
                 if (!vol) {
                     var vol = 75 / 100
                 }
-                console.log(args)
                 var music = args[1]
-                //const dispatcher = connection.play(`./${music}.mp3`, { volume: vol });
-
-                const stream = ytdl(`${music}`, { volume: vol, filter : 'audioonly' });
-                const dispatcher = connection.play(stream);
                 playing.push(music)
+                const dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));
 
                 dispatcher.on("start", () => { 
                     console.log("audio playing")
@@ -48,7 +43,10 @@ client.on('message', msg => {
                 dispatcher.on("finish", () => {
                     console.log("left channel");
                     playing.shift()
-                    if (playing.length === "0"){
+                    if (playing.length > 0){
+                        const dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));
+                        msg.channel.send(`now playing: ${playing[0]}`);
+                    } else if (playing.length === 0) {
                         voiceChannel.leave();
                     }
                 });
