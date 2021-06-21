@@ -26,15 +26,15 @@ client.on('message', msg => {
         if (!args[1]) {
             msg.reply("Please provide link")
         }
+        if (!vol) {
+            var vol = 75 / 100
+        }
         else if (voiceChannel) {
             voiceChannel.join().then(connection => {
-                if (!vol) {
-                    var vol = 75 / 100
-                }
-                var music = args[1]
-                playing.push(music)
+                
+                playing.push(args[1])
                 const dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));
-
+                
                 dispatcher.on("start", () => { 
                     console.log("audio playing")
                     msg.channel.send(`now playing: ${playing[0]}`);
@@ -44,8 +44,10 @@ client.on('message', msg => {
                     console.log("left channel");
                     playing.shift()
                     if (playing.length > 0){
+                        
                         const dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));
                         msg.channel.send(`now playing: ${playing[0]}`);
+                        
                     } else if (playing.length === 0) {
                         voiceChannel.leave();
                     }
