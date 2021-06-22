@@ -1,79 +1,84 @@
 const Discord = require('discord.js');
-const ytdl = require('ytdl-core');
+const DisTube = require('distube');
 const client = new Discord.Client();
-// const config = require('./config.json');
-const settings = {
-    prefix: '?',
-    token: 'ODMzNjM5NDIwMDQ1MDMzNDky.YH1RNg.gHK2gTKycfeMwBhteAKDqqseynA'
-};
-const prefix = settings.prefix
+const { prefix, token } = require('./config.json');
 
 client.once('ready', () => {
     console.log("Logged in as ", client.user.username + "#" + client.user.discriminator)
 });
 
-client.login(settings.token);
-client.on('message', msg => {
+
+
+// https://github.com/stuyy/discordjs-youtube-tutorials
+// https://discord.js.org/#/docs/main/stable/class/VoiceChannel
+
+function joinChannel(msg, voiceChannel) {
+    // if joined just play if !joined join and play
+    if (voiceChannel) {
+        voiceChannel.join()
+        msg.channel.send("Joined channel")
+    //connection.play(broadcast);
+    } else {
+        msg.reply("You need to be in a voice channel")
+    }
+}
+
+function setVolume(msg, args) {
+    if (isNaN(args[0])) {
+        msg.reply("You need enter number")            
+    }
+    else if (args[0]) {
+        var vol = Number(args[0]) / 100
+        msg.channel.send("Volume successfully changed, default 75")
+    } else {
+        msg.reply("You need enter single number")
+    };
+}
+
+
+
+client.on('message', async (msg) => {
     if (!msg.content.startsWith(prefix) || msg.author.bot) return;
     const args = msg.content.split(" ");
     const command = args.shift().toLowerCase()
     const voiceChannel = msg.member.voice.channel;
-    var playing = []
-    // https://github.com/stuyy/discordjs-youtube-tutorials
-    // https://discord.js.org/#/docs/main/stable/class/VoiceChannel
+    const distube = new DisTube(client);
+
+    const status = (queue) => `Volume: \`${vol}%\` | Filter: \`${queue.filter || "Off"}\` | Loop: \`${queue.repeatMode ? queue.repeatMode == 2 ? "All Queue" : "This Song" : "Off"}\` | Autoplay: \`${queue.autoplay ? "On" : "Off"}\``;
+
+    distube.on("playSong", (msg, queue, song) => msg.channel.send(
+        `Playing \`${song.name}\` - \`${song.formattedDuration}\`\nRequested by: ${song.user}\n${status(queue)}`
+    ))
+    
 
     if (command === prefix + "p") {
-        if (!args[1]) {
-            msg.reply("Please provide link")
-        }
         if (!vol) {
             var vol = 75 / 100
         }
-        else if (voiceChannel) {
+        if (voiceChannel) {
             voiceChannel.join().then(connection => {
-                
-                playing.push(args[1])
-                const dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));
-                
-                dispatcher.on("start", () => { 
-                    console.log("audio playing")
-                    msg.channel.send(`now playing: ${playing[0]}`);
-                });
-
-                dispatcher.on("finish", () => {
-                    console.log("left channel");
-                    playing.shift()
-                    if (playing.length > 0){
-                        
-                        const dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));
-                        msg.channel.send(`now playing: ${playing[0]}`);
-                        
-                    } else if (playing.length === 0) {
-                        voiceChannel.leave();
-                    }
-                });
+    
+            
+            let queue = distube.getQueue(msg);
+            console.log(queue)
+            //msg.channel.send('Current queue:\n' + queue.songs.map((song, id) =>
+            //    `**${id + 1}**. ${song.name} - \`${song.formattedDuration}\``
+            //).join("\n"));
+            console.log(args.join(" "))
+            distube.play(String(args.join(" ")));
+    
+                    
             });
-        } else {
-            return msg.reply("You need to be in a voice channel to play music!")
-        };
-    }
+            } else {
+                return msg.reply("You need to be in a voice channel to play music!")
+            };    
+    }       
 
     else if (command === prefix + 'join') {
-        // if joined just play if !joined join and play
-        if (voiceChannel) {
-            msg.channel.send("Joined channel")
-            voiceChannel.join()
-        //connection.play(broadcast);
-        } else {
-            msg.reply("You need to be in a voice channel")
-        }
+        joinChannel(msg, voiceChannel)
     }
     
     else if (command === prefix + "leave"){
-        //if not already joined
-//        if (loop) {
-//            var loop = false
-//        }
         try {
             voiceChannel.leave()
             playing.length = 0;
@@ -84,26 +89,29 @@ client.on('message', msg => {
     }
 
     else if (command === prefix + "stop"){
-        //if something playing [make array (stack)]
-        if (playing.length > 0) {
-            dispatcher.destroy()
-        } else {
-            msg.reply("Nothing playing")
-        };
+        distube.stop(msg)
+    }
+    else if (command === prefix + "skip") {
+        distube.skip(msg)
+        msg.channel.send("Song skipped")
     }
 
     else if (command === prefix + "pause") {
         try {
-            console.log(playing)
-            dispatcher.pause()
+            distube.pause(msg)
         } catch {
             msg.reply("Nothing playing")
         };
+    } 
+    else if (["loop", "repeat"].includes(command)) {
+        let mode = distube.setRepeatMode(msg, parseInt(args[0]));
+        mode = mode ? mode == 2 ? "Repeat queue" : "Repeat song" : "Off";
+        msg.channel.send("Set repeat mode to `" + mode + "`");
     }
 
     else if (command === prefix + "resume") {
         try {
-            dispatcher.resume()
+            distube.resume(msg)
         } catch {
             msg.reply("Nothing playing")
         };
@@ -111,15 +119,7 @@ client.on('message', msg => {
     }
 
     else if (command === prefix + "volume") {
-        if (isNaN(args[0])) {
-            msg.reply("You need enter number")            
-        }
-        else if (args[0]) {
-            var vol = Number(args[0]) / 100
-            msg.channel.send("Volume successfully changed, default 75")
-        } else {
-            msg.reply("You need enter single number")
-        };
+        setVolume(msg, args)
     }
 
     else if (command === prefix + 'avatar') {
@@ -139,22 +139,19 @@ client.on('message', msg => {
 
         if (taggedUser) {
             if (args[1]) {
-                if (isNaN(args[1])) {
-                    return msg.reply("You need to use number")
-                }
-                else if (Number(args[1]) > 20) {
-                    return msg.reply("More than 20 is not allowed")
-                } else {
+                if (isNaN(args[1])) return msg.reply("You need to use number")
+                else if (Number(args[1]) > 20) return msg.reply("More than 20 is not allowed")
+                
+                else {
                     var count = Number(args[1])
                 };
             } 
             else if (args[2]) {
-                if (isNaN(args[2])) {
-                    return msg.reply("You need to use number")
-                }
-                else if (Number(args[2]) > 10) {
-                    return msg.reply("More than 10 is not allowed")
-                } else {
+                if (isNaN(args[2])) return msg.reply("You need to use number")
+                
+                else if (Number(args[2]) > 10) return msg.reply("More than 10 is not allowed")
+                
+                else {
                     var count = Number(args[2])
                 };
             }
@@ -168,49 +165,5 @@ client.on('message', msg => {
      }
 
 })
-// https://stackoverflow.com/questions/47045805/playing-an-audio-file-using-discord-js-and-ytdl-core
 
- 
-      /* meme post
-     run: async (client, msg, args) => {
-    
-    const subReddit = ["dankmeme", "meme", "me_irl"]
-    const random = subReddit[Math.floor(Math.random() * subReddit.length)]
-
-    const img = await randomPuppy(random);
-    const embed = new RichEmbed()
-        .setColor("RANDOM")
-        .setImage(img)
-        .setTitle('From /r/' + random)
-        .setURL('https://reddit.com/r/' + random)
-    msg.channel.send(embed) */
-
-
-/* 
-const streamOptions = { seek: 0, volume: 1 };
-var voiceChannel = message.member.voiceChannel;
-        voiceChannel.join().then(connection => {
-            console.log("joined channel");
-            const stream = ytdl('https://www.youtube.com/watch?v=gOMhN-hfMtY', { filter : 'audioonly' });
-            const dispatcher = connection.playStream(stream, streamOptions);
-            dispatcher.on("end", end => {
-                console.log("left channel");
-                voiceChannel.leave();
-            });
-        }).catch(err => console.log(err)); 
-        */
-
-
-        /* module.exports = {
-            a: '🇦', b: '🇧', c: '🇨', d: '🇩',
-            e: '🇪', f: '🇫', g: '🇬', h: '🇭',
-            i: '🇮', j: '🇯', k: '🇰', l: '🇱',
-            m: '🇲', n: '🇳', o: '🇴', p: '🇵',
-            q: '🇶', r: '🇷', s: '🇸', t: '🇹',
-            u: '🇺', v: '🇻', w: '🇼', x: '🇽',
-            y: '🇾', z: '🇿', 0: '0️⃣', 1: '1️⃣',
-            2: '2️⃣', 3: '3️⃣', 4: '4️⃣', 5: '5️⃣',
-            6: '6️⃣', 7: '7️⃣', 8: '8️⃣', 9: '9️⃣',
-            10: '🔟', '#': '#️⃣', '*': '*️⃣',
-            '!': '❗', '?': '❓',
-        }; */
+client.login(token);
