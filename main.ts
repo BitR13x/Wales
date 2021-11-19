@@ -10,6 +10,8 @@ client.once('ready', () => {
 // https://github.com/stuyy/discordjs-youtube-tutorials
 // https://discord.js.org/#/docs/main/stable/class/VoiceChannel
 
+
+setTimeout(drinking_time,3600)
 function drinking_time() {
     client.channels.cache.get("911272250106339388").send("Drinking Time") //, {embed: {image: {url: "https://imgur.com/XcGqJ3z",}}})
     //mess.react('<:blobreach:123456789012345678>');
@@ -67,7 +69,6 @@ function joinChannel(msg, voiceChannel) {
 }
 
 client.on('message', msg => {
-    drinking_time()
     if (!msg.content.startsWith(prefix) || msg.author.bot) return;
     const args = msg.content.split(" ");
     const command = args.shift().toLowerCase()
