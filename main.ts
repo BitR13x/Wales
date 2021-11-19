@@ -7,9 +7,13 @@ client.once('ready', () => {
     console.log("Logged in as ", client.user.username + "#" + client.user.discriminator)
 });
 
-
 // https://github.com/stuyy/discordjs-youtube-tutorials
 // https://discord.js.org/#/docs/main/stable/class/VoiceChannel
+
+function drinking_time() {
+    client.channels.cache.get("911272250106339388").send("Drinking Time") //, {embed: {image: {url: "https://imgur.com/XcGqJ3z",}}})
+    //mess.react('<:blobreach:123456789012345678>');
+};
 
 function playSong(msg, args, voiceChannel, playing) {
     if (voiceChannel) {
@@ -26,19 +30,23 @@ function playSong(msg, args, voiceChannel, playing) {
                 console.log("it works")
             }
 
-            const dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));    
-            dispatcher.on("start", () => { 
+            this.dispatcher = connection.play(ytdl(playing[0], { volume: vol, filter : 'audioonly' }));
+            
+            this.dispatcher.on("start", () => {
                 console.log("audio playing")
                 msg.channel.send(`now playing: ${playing[0]}`);
             });
-            dispatcher.on("finish", () => {
+            
+            this.dispatcher.on("finish", () => {
                 console.log("left channel");
+                
                 playing.shift()
                 if (playing.length > 0){
                     playSong(msg, args, voiceChannel, playing)
-                        
+
                 } else if (playing.length === 0) {
                     voiceChannel.leave();
+                    msg.channel.send("Bye, Bye....");
                 }
             });
         });
@@ -58,22 +66,8 @@ function joinChannel(msg, voiceChannel) {
     }
 }
 
-function setVolume(msg, args) {
-    if (isNaN(args[0])) {
-        msg.reply("You need enter number")            
-    }
-    else if (args[0]) {
-        var vol = Number(args[0]) / 100
-        msg.channel.send("Volume successfully changed, default 75")
-    } else {
-        msg.reply("You need enter single number")
-    };
-}
-
-
-
-
 client.on('message', msg => {
+    drinking_time()
     if (!msg.content.startsWith(prefix) || msg.author.bot) return;
     const args = msg.content.split(" ");
     const command = args.shift().toLowerCase()
@@ -83,13 +77,10 @@ client.on('message', msg => {
     if (command === prefix + "p") {
         if (!args[0]) return msg.reply("Please provide link")
         playSong(msg, args, voiceChannel, playing)
-    }       
-
-    if (command === prefix + 'join') {
-        joinChannel(msg, VoiceChannel)
     }
-    
-    if (command === prefix + "leave"){
+
+
+    else if (command === prefix + "leave"){
         //if not already joined
 //        if (loop) {
 //            var loop = false
@@ -103,35 +94,25 @@ client.on('message', msg => {
         };
     }
 
-    if (command === prefix + "stop"){
+    else if (command === prefix + "stop"){
         //if something playing [make array (stack)]
-        if (playing.length > 0) {
-            dispatcher.destroy()
+        if (playing.length > 0 && this.dispatcher) {
+            this.dispatcher.destroy()
         } else {
             msg.reply("Nothing playing")
         };
     }
 
-    if (command === prefix + "pause") {
-        try {
-            console.log(playing)
-            dispatcher.pause()
-        } catch {
-            msg.reply("Nothing playing")
+    else if (command === prefix + "volume") {
+        if (isNaN(args[0])) {
+            msg.reply("You need enter number")
+        }
+        else if (args[0]) {
+            var vol = Number(args[0]) / 100
+            msg.channel.send("Volume successfully changed, default 75")
+        } else {
+            msg.reply("You need enter single number")
         };
-    }
-
-    if (command === prefix + "resume") {
-        try {
-            dispatcher.resume()
-        } catch {
-            msg.reply("Nothing playing")
-        };
-        
-    }
-
-    if (command === prefix + "volume") {
-        setVolume(msg, args)
     }
 
     else if (command === prefix + 'avatar') {
@@ -143,7 +124,7 @@ client.on('message', msg => {
         });
         msg.channel.send(avatarList);
      }
-     
+
      else if (command === prefix + "tag") {
         if (msg.channel.name === "general") return msg.reply("not allowed in general");
         var taggedUser = msg.mentions.users.first()
@@ -153,22 +134,22 @@ client.on('message', msg => {
             if (args[1]) {
                 if (isNaN(args[1])) return msg.reply("You need to use number")
                 else if (Number(args[1]) > 20) return msg.reply("More than 20 is not allowed")
-                
+
                 else {
                     var count = Number(args[1])
                 };
-            } 
+            }
             else if (args[2]) {
                 if (isNaN(args[2])) return msg.reply("You need to use number")
-                
+
                 else if (Number(args[2]) > 10) return msg.reply("More than 10 is not allowed")
-                
+
                 else {
                     var count = Number(args[2])
                 };
             }
-    
-            for (i = 0; i < count; i++) {
+
+            for (let i = 0; i < count; i++) {
                 msg.channel.send(`Get Your Ass Over Here: <@${taggedUser.id}>`)
             };
         } else {
@@ -181,10 +162,10 @@ client.on('message', msg => {
 client.login(token);
 // https://stackoverflow.com/questions/47045805/playing-an-audio-file-using-discord-js-and-ytdl-core
 
- 
+
       /* meme post
      run: async (client, msg, args) => {
-    
+
     const subReddit = ["dankmeme", "meme", "me_irl"]
     const random = subReddit[Math.floor(Math.random() * subReddit.length)]
 
@@ -196,7 +177,7 @@ client.login(token);
         .setURL('https://reddit.com/r/' + random)
     msg.channel.send(embed) */
 
-        /* module.exports = {
+module.exports = {
             a: '🇦', b: '🇧', c: '🇨', d: '🇩',
             e: '🇪', f: '🇫', g: '🇬', h: '🇭',
             i: '🇮', j: '🇯', k: '🇰', l: '🇱',
@@ -208,4 +189,4 @@ client.login(token);
             6: '6️⃣', 7: '7️⃣', 8: '8️⃣', 9: '9️⃣',
             10: '🔟', '#': '#️⃣', '*': '*️⃣',
             '!': '❗', '?': '❓',
-        }; */
+};
