@@ -4,7 +4,7 @@ Basic discord bot, who is playing youtube sound | music + special functions.
 ### npm
 After you clone repository you will need run this command:
 ```
-npm install
+$ npm install
 ```
 
 If you dont have npm installed:
