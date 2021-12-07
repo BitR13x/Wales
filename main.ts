@@ -20,14 +20,11 @@ function drinking_time() {
     finally { return 0;}
 };
 
-function playSong(msg, song, voiceChannel, loop=false) {
+function playSong(msg, song, voiceChannel, loop=false, vol=0.5) {
     if (voiceChannel) {
         voiceChannel.join().then(connection => {
-            if (!vol) {
-                var vol = 50 / 100
-            }
 
-            this.dispatcher = connection.play(ytdl(song, { volume: 0.5, filter : 'audioonly', type: 'opus' }));
+            this.dispatcher = connection.play(ytdl(song, { volume: vol, filter : 'audioonly', type: 'opus' }));
             
             this.dispatcher.on("start", () => {
                 getInfo(song).then(info => {
@@ -37,7 +34,7 @@ function playSong(msg, song, voiceChannel, loop=false) {
  
             this.dispatcher.on("finish", () => {
                 if (loop) {
-                    playSong(msg, song, voiceChannel, loop);
+                    playSong(msg, song, voiceChannel, loop, vol);
                 } 
                 
                 else {
@@ -61,11 +58,11 @@ client.on('message', msg => {
     if (command === prefix + "p") {
         if (!args[0]) return msg.reply("Please provide link")
         else if (args[0].startsWith("https://")){
-            playSong(msg, args[0], voiceChannel, loop);
+            playSong(msg, args[0], voiceChannel, loop, vol);
         } else {
             msg.channel.send("Searching")
             getInfo(args.join(" ")).then(info => {
-                playSong(msg, info.items[0].webpage_url, voiceChannel, loop);
+                playSong(msg, info.items[0].webpage_url, voiceChannel, loop, vol);
             })
         }
     }
