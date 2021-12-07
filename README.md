@@ -9,7 +9,8 @@ npm install
 
 If you dont have npm installed:
 ```
-curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.3/install.sh | bash
+$ sudo apt install nodejs
+$ curl -L https://npmjs.org/install.sh | sudo sh 
 ```
 
 ### config.json
